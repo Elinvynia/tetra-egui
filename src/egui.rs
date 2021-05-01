@@ -1,17 +1,45 @@
 use egui::paint::ClippedShape;
 use egui::{ClippedMesh, CtxRef, Event, Modifiers, Pos2, RawInput};
-use egui::{PointerButton, Texture as ETexture, TextureId, Vec2 as EVec2};
+use egui::{PointerButton, TextureId, Vec2 as EVec2};
 use tetra::graphics::mesh::{IndexBuffer, Vertex, VertexBuffer, VertexWinding};
 use tetra::graphics::{Color, DrawParams, Texture};
 use tetra::input::*;
 use tetra::math::Vec2;
 use tetra::{Context, Event as TEvent};
 
+#[derive(Debug, Default)]
+pub struct EguiRenderer {
+    egui_texture: Option<Texture>,
+}
+
+impl EguiRenderer {
+    pub fn init_texture(&mut self, ctx: &mut Context, ectx: &CtxRef) -> Texture {
+        let texture = ectx.texture();
+        // Egui uses premultiplied alpha with white pixels.
+        let alphas = &texture.pixels;
+        let mut fixed = Vec::with_capacity(alphas.len());
+        for x in alphas {
+            fixed.push(255);
+            fixed.push(255);
+            fixed.push(255);
+            fixed.push(*x);
+        }
+        let texture =
+            Texture::from_rgba(ctx, texture.width as i32, texture.height as i32, &fixed).unwrap();
+        self.egui_texture = Some(texture.clone());
+        texture
+    }
+}
+
 // Paint the frame.
-pub fn render_ui(ctx: &mut Context, ectx: &mut CtxRef, shapes: Vec<ClippedShape>) {
-    let texture = ectx.texture();
+pub fn render_ui(
+    ctx: &mut Context,
+    ectx: &mut CtxRef,
+    renderer: &mut EguiRenderer,
+    shapes: Vec<ClippedShape>,
+) {
     let clipped_meshes = ectx.tessellate(shapes);
-    paint(ctx, clipped_meshes, texture.as_ref());
+    paint(ctx, clipped_meshes, ectx, renderer);
 }
 
 // Process tetra Events into egui Events
@@ -99,8 +127,12 @@ pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
 }
 
 // Paint the GUI using tetra.
-// TODO: Optimize.
-pub fn paint(ctx: &mut Context, meshes: Vec<ClippedMesh>, texture: &ETexture) {
+pub fn paint(
+    ctx: &mut Context,
+    meshes: Vec<ClippedMesh>,
+    ectx: &mut CtxRef,
+    renderer: &mut EguiRenderer,
+) {
     for cm in meshes.into_iter() {
         let mut verts = vec![];
 
@@ -120,22 +152,16 @@ pub fn paint(ctx: &mut Context, meshes: Vec<ClippedMesh>, texture: &ETexture) {
         // Vertices
         let buffer = VertexBuffer::new(ctx, &verts).unwrap();
 
-        // Egui uses premultiplied alpha with white pixels.
-        let alphas = &texture.pixels;
-        let mut fixed = vec![];
-        for x in alphas {
-            fixed.push(255);
-            fixed.push(255);
-            fixed.push(255);
-            fixed.push(*x);
-        }
-
         let tex = if let TextureId::User(_x) = cm.1.texture_id {
             // Implement your own custom egui texture handling!
             todo!()
         } else {
-            Texture::from_rgba(ctx, texture.width as i32, texture.height as i32, &fixed).unwrap()
+            renderer
+                .egui_texture
+                .clone()
+                .unwrap_or_else(|| renderer.init_texture(ctx, ectx))
         };
+
         let mut mesh = buffer.into_mesh();
         mesh.set_index_buffer(index);
         // This should most likely stay disabled.

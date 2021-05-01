@@ -1,4 +1,4 @@
-use crate::egui::{handle_event, render_ui};
+use crate::egui::{handle_event, render_ui, EguiRenderer};
 use egui::{CtxRef, RawInput, Window};
 use tetra::graphics::{clear, Color};
 use tetra::time::get_delta_time;
@@ -6,6 +6,7 @@ use tetra::{Context, Event, State};
 
 pub struct MainState {
     egui: CtxRef,
+    egui_renderer: EguiRenderer,
     input: RawInput,
 }
 
@@ -13,8 +14,13 @@ impl MainState {
     pub fn new(_ctx: &mut Context) -> tetra::Result<Self> {
         let egui = CtxRef::default();
         let input = RawInput::default();
+        let egui_renderer = EguiRenderer::default();
 
-        Ok(MainState { egui, input })
+        Ok(MainState {
+            egui,
+            egui_renderer,
+            input,
+        })
     }
 }
 
@@ -38,7 +44,7 @@ impl State for MainState {
         // end
 
         let (_output, shapes) = self.egui.end_frame();
-        render_ui(ctx, &mut self.egui, shapes);
+        render_ui(ctx, &mut self.egui, &mut self.egui_renderer, shapes);
 
         Ok(())
     }
