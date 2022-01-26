@@ -1,4 +1,4 @@
-[![ci-badge][ci] [![docs-badge][docs] [![crate-version]][crate-link]
+[![ci-badge]][ci]
 
 # tetra-egui
 
@@ -12,7 +12,3 @@ Supported egui version matrix (tetra-egui | egui):
 
 [ci]: https://github.com/Elinvynia/tetra-egui/actions?query=workflow%3ARust
 [ci-badge]: https://img.shields.io/github/workflow/status/Elinvynia/tetra-egui/Rust/master?style=flat-square
-[docs]: https://docs.rs/tetra-egui
-[docs-badge]: https://img.shields.io/badge/docs-online-5023dd.svg?style=flat-square
-[crate-link]: https://crates.io/crates/tetra-egui
-[crate-version]: https://img.shields.io/crates/v/tetra-egui.svg?style=flat-square
