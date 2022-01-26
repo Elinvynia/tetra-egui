@@ -1,5 +1,5 @@
 use crate::egui::{handle_event, render_ui, EguiRenderer};
-use egui::{CtxRef, RawInput, Window};
+use egui::{CtxRef, InputState, Window};
 use tetra::graphics::{clear, Color};
 use tetra::time::get_delta_time;
 use tetra::{Context, Event, State};
@@ -7,13 +7,13 @@ use tetra::{Context, Event, State};
 pub struct MainState {
     egui: CtxRef,
     egui_renderer: EguiRenderer,
-    input: RawInput,
+    input: InputState,
 }
 
 impl MainState {
     pub fn new(_ctx: &mut Context) -> tetra::Result<Self> {
         let egui = CtxRef::default();
-        let input = RawInput::default();
+        let input = InputState::default();
         let egui_renderer = EguiRenderer::default();
 
         Ok(MainState {
@@ -28,14 +28,14 @@ impl State for MainState {
     fn draw(&mut self, ctx: &mut Context) -> tetra::Result {
         clear(ctx, Color::rgb(0.8, 0.8, 0.95));
 
-        let new = match &mut self.input.time {
+        let new = match &mut self.input.raw.time {
             Some(prev) => Some(*prev + get_delta_time(ctx).as_secs_f64()),
             None => Some(get_delta_time(ctx).as_secs_f64()),
         };
 
-        self.input.time = new;
-        self.egui.begin_frame(self.input.take());
-        self.input.time = new;
+        self.input.raw.time = new;
+        self.egui.begin_frame(self.input.raw.take());
+        self.input.raw.time = new;
 
         // egui UI code goes here!
         Window::new("Hello World").show(&self.egui, |ui| {

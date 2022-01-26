@@ -1,6 +1,6 @@
-use egui::paint::ClippedShape;
-use egui::{ClippedMesh, CtxRef, Event, Modifiers, Pos2, RawInput};
+use egui::{ClippedMesh, CtxRef, Event, InputState, Modifiers, Pos2};
 use egui::{PointerButton, TextureId, Vec2 as EVec2};
+use epaint::ClippedShape;
 use tetra::graphics::mesh::{IndexBuffer, Vertex, VertexBuffer, VertexWinding};
 use tetra::graphics::{Color, DrawParams, Texture};
 use tetra::input::*;
@@ -14,7 +14,7 @@ pub struct EguiRenderer {
 
 impl EguiRenderer {
     pub fn init_texture(&mut self, ctx: &mut Context, ectx: &CtxRef) -> Texture {
-        let texture = ectx.texture();
+        let texture = ectx.font_image();
         // Egui uses premultiplied alpha with white pixels.
         let alphas = &texture.pixels;
         let mut fixed = Vec::with_capacity(alphas.len());
@@ -43,7 +43,7 @@ pub fn render_ui(
 }
 
 // Process tetra Events into egui Events
-pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
+pub fn handle_event(ctx: &mut Context, is: &mut InputState, event: &TEvent) {
     let pos = Pos2::new(get_mouse_x(ctx), get_mouse_y(ctx));
     let mut modifiers = Modifiers::default();
 
@@ -69,7 +69,7 @@ pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
                 _ => PointerButton::Primary,
             };
 
-            ri.events.push(Event::PointerButton {
+            is.raw.events.push(Event::PointerButton {
                 pos,
                 button: ebutton,
                 pressed: true,
@@ -84,7 +84,7 @@ pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
                 _ => PointerButton::Primary,
             };
 
-            ri.events.push(Event::PointerButton {
+            is.raw.events.push(Event::PointerButton {
                 pos,
                 button: ebutton,
                 pressed: false,
@@ -93,7 +93,7 @@ pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
         }
         TEvent::KeyPressed { key } => {
             if let Some(k) = convert_key(key) {
-                ri.events.push(Event::Key {
+                is.raw.events.push(Event::Key {
                     key: k,
                     pressed: true,
                     modifiers,
@@ -102,7 +102,7 @@ pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
         }
         TEvent::KeyReleased { key } => {
             if let Some(k) = convert_key(key) {
-                ri.events.push(Event::Key {
+                is.raw.events.push(Event::Key {
                     key: k,
                     pressed: false,
                     modifiers,
@@ -111,17 +111,17 @@ pub fn handle_event(ctx: &mut Context, ri: &mut RawInput, event: &TEvent) {
         }
         TEvent::MouseMoved { position, .. } => {
             let p = Pos2::new(position.x, position.y);
-            ri.events.push(Event::PointerMoved(p));
+            is.raw.events.push(Event::PointerMoved(p));
         }
         TEvent::MouseWheelMoved { amount } => {
             let am = EVec2 {
                 x: amount.x as f32,
                 y: amount.y as f32,
             };
-            ri.scroll_delta = am;
+            is.scroll_delta = am;
         }
-        TEvent::TextInput { text } => ri.events.push(Event::Text(text.to_owned())),
-        TEvent::FocusLost => ri.events.push(Event::PointerGone),
+        TEvent::TextInput { text } => is.raw.events.push(Event::Text(text.to_owned())),
+        TEvent::FocusLost => is.raw.events.push(Event::PointerGone),
         _ => {}
     }
 }
