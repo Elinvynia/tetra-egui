@@ -38,6 +38,8 @@ impl State for MainState {
         self.input.raw.time = new;
 
         // egui UI code goes here!
+        // you should most likely make a separate function
+        // that gets called here
         Window::new("Hello World").show(&self.egui, |ui| {
             ui.label("I am inside of the window!");
         });
