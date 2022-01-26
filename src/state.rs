@@ -41,7 +41,7 @@ impl State for MainState {
         // you should most likely make a separate function
         // that gets called here
         Window::new("Hello World").show(&self.egui, |ui| {
-            ui.label("I am inside of the window.");
+            ui.label("I am inside of the window!");
         });
         // end
 
